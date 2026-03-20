@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+jinja2
+python-multipart
+python-dotenv
+google-generativeai
+paddlepaddle
+paddleocr
+easyocr
+pytesseract
+torch
+transformers
+pillow
