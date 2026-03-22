@@ -115,12 +115,54 @@ When you first run the demo:
 
 ```
 demo/
-├── app.py                     # FastAPI app with web UI
-├── method1_rule.py            # Rule-based extraction (EasyOCR + regex)
-├── method2_llm.py             # LLM-based extraction (EasyOCR + Gemini)
-├── method3_layoutlm.py        # LayoutLM-based extraction
-├── requirements.txt           # Python dependencies
-└── README.md                  # This file
+app
+│   │   main.py
+│   │   __init__.py
+│   │
+│   ├───api
+│   │   │   routes.py
+│   │   │   __init__.py
+│   │   │
+│   │   └───__pycache__
+│   │           routes.cpython-313.pyc
+│   │           __init__.cpython-313.pyc
+│   │
+│   ├───core
+│   │   │   config.py
+│   │   │   ocr.py
+│   │   │   __init__.py
+│   │   │
+│   │   └───__pycache__
+│   │           config.cpython-313.pyc
+│   │           ocr.cpython-313.pyc
+│   │           __init__.cpython-313.pyc
+│   │
+│   ├───services
+│   │   │   gemini_extractor.py
+│   │   │   layoutlm_extractor.py
+│   │   │   rule_extractor.py
+│   │   │   __init__.py
+│   │   │
+│   │   └───__pycache__
+│   │           gemini_extractor.cpython-313.pyc
+│   │           layoutlm_extractor.cpython-313.pyc
+│   │           rule_extractor.cpython-313.pyc
+│   │           __init__.cpython-313.pyc
+│   │
+│   ├───templates
+│   │       index.html
+│   │
+│   └───__pycache__
+│           main.cpython-313.pyc
+│           __init__.cpython-313.pyc
+│
+└───train
+        layoutlm_sroie.ipynb
+.env.example
+.gitignore
+README.md
+requirements.txt
+method_performance.md
 ```
 
 ---
