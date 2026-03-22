@@ -1,46 +1,189 @@
-# Invoice Intelligence
+# Receipt Information Extraction Demo
 
-A robust document processing system for structured information extraction from receipts and invoices. This platform leverages multiple extraction strategies including rule-based heuristics, LLM-powered context awareness, and fine-tuned spatial models (LayoutLM).
+A FastAPI web application that demonstrates three methods for extracting structured information (COMPANY, ADDRESS, DATE, TOTAL) from receipt images.
 
-## Features
+## Methods
 
-- **Multi-Strategy Extraction**: Choose between Rule-based, LLM (Gemini), or Fine-tuned LayoutLM.
-- **Unified OCR Layer**: Modular support for PaddleOCR, EasyOCR, and PyTesseract with automatic fallback.
-- **Modern Web Interface**: Clean, premium UI for real-time document analysis.
-- **RESTful API**: Clean FastAPI implementation for easy integration.
+1. **Method 1 — Rule-based (EasyOCR + Regex)**
+   - Fast, lightweight approach
+   - Uses EasyOCR for text recognition
+   - Applies hand-crafted regex patterns to extract fields
+   - Best for: quick demos, simple receipts
 
-## Getting Started
+2. **Method 2 — LLM-based (EasyOCR + Gemini)**
+   - Smart approach using Google's Gemini API
+   - Uses EasyOCR for OCR, then sends text to Gemini LLM for structured extraction
+   - Handles OCR noise and ambiguous text well
+   - Requires: `GEMINI_API_KEY` environment variable
+   - Best for: noisy receipts, high accuracy needed
 
-1. **Install Dependencies**
+3. **Method 3 — LayoutLM (Fine-tuned)**
+   - Advanced deep-learning approach
+   - Uses fine-tuned LayoutLM model trained on SROIE dataset
+   - Combines text + layout understanding for token classification
+   - **Visualization**: Highlights detected fields with bounding box overlays on the receipt image
+   - Best for: SROIE-like receipts, highest accuracy
+
+---
+
+## Important Notes on Model Loading
+
+- **EasyOCR**: Used for all methods to handle text recognition and spatial coordinates. It will download its detection and recognition models (~100 MB) on first use.
+- **LayoutLM (Method 3)**: Requires the fine-tuned model weights in `train/output/model/`. **Note: The trained model directory is not uploaded to the repository because its size is too large (~500MB+).** You must run the training script in `train/layoutlm_sroie.ipynb` to generate these weights locally.
+- **Evaluation Metrics**:
+  - **Rule-based & LLM**: Evaluated using **Exact Match (EM)** and **Token F1**.
+  - **LayoutLM**: Evaluated using **Precision**, **Recall**, and **Accuracy** based on token-level classification performance.
+
+---
+
+## Setup
+
+### Prerequisites
+- Python 3.11+
+- A GPU (CUDA 11.8+) is recommended for faster inference, but CPU works too
+
+### Installation
+
+1. **Clone or navigate to the project folder:**
+   ```bash
+   git clone https://github.com/tranhaiming14/NLP_invoice_extraction.git
+   ```
+
+2. **Create a virtual environment (optional but recommended):**
+   ```bash
+   python -m venv venv
+   venv\Scripts\activate  # Windows
+   # or:
+   source venv/bin/activate  # macOS/Linux
+   ```
+
+3. **Install dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
 
-2. **Configuration**
-   Create a `.env` file in the root directory (see `.env.example`):
-   ```ini
-   GEMINI_API_KEY=your_key_here
+4. **(Optional, for Method 2) Set your Gemini API key:**
+   ```powershell
+   $env:GEMINI_API_KEY = "your-actual-api-key-here"
    ```
-
-3. **Run the Application**
+   Or on macOS/Linux:
    ```bash
-   uvicorn app.main:app --reload
+   export GEMINI_API_KEY="your-actual-api-key-here"
    ```
 
-## Project Structure
+5. **Download the Fine-tuned LayoutLM Model:**
+   Since the model weights (~500MB) are too large for Git, download them from the link below and extract to `train/output/model/`.
+   - **Download Link**: (https://huggingface.co/tranhaiming/Finetuned_LayoutLM_for_Invoice)
+   - **Destination**:
+     ```bash
+     mkdir -p train/output/model
+     # Extract files into this directory
+     ```
 
-- `app/`: Main application logic.
-  - `api/`: FastAPI route definitions.
-  - `core/`: OCR handlers and configuration.
-  - `services/`: Specialized extraction engines.
-  - `templates/`: Modern frontend components.
-- `train/`: Research and model training notebooks.
+6. **Start the FastAPI Server:**
+   Navigate to the `demo` folder and run the web server on port 8000.
+   ```bash
+   cd demo
+   uvicorn app:app --reload --port 8000
+   ```
 
-## Tech Stack
+### Important Notes on Model Loading
 
-- **Backend**: FastAPI, Uvicorn, Jinja2
-- **ML/AI**: Google Gemini (LLM), LayoutLM (HuggingFace Transformers), PyTorch
-- **OCR**: PaddleOCR, EasyOCR, Tesseract
+When you first run the demo:
+- **EasyOCR** will download its model (~100 MB) on first use — this may take a few minutes
+- **LayoutLM (Method 3)** will load the fine-tuned model from `train/output/model/` — ensure the downloaded weights are present there
 
 ---
-*Developed for efficient document digitization.*
+
+## Running the Demo
+
+1. **Access the Web Interface:**
+   Open your browser and navigate to:
+   ```
+   http://localhost:8000
+   ```
+
+2. **Upload a receipt image:**
+   - Click or drag-and-drop a JPEG/PNG/BMP/TIFF/WebP image
+   - Select a method (Rule-based, LLM, or LayoutLM)
+   - Click "Extract Information"
+   - View extracted fields, switch methods to compare, and see **bounding box visualizations** for LayoutLM.
+
+---
+
+## File Structure
+
+```
+demo/
+├── app.py                     # FastAPI app with web UI
+├── method1_rule.py            # Rule-based extraction (EasyOCR + regex)
+├── method2_llm.py             # LLM-based extraction (EasyOCR + Gemini)
+├── method3_layoutlm.py        # LayoutLM-based extraction
+├── requirements.txt           # Python dependencies
+└── README.md                  # This file
+```
+
+---
+
+## API Endpoints
+
+- **GET** `/` — HTML frontend
+- **POST** `/predict/rule` — Extract fields using Method 1 (Rule-based)
+- **POST** `/predict/llm` — Extract fields using Method 2 (LLM)
+- **POST** `/predict/layoutlm` — Extract fields using Method 3 (LayoutLM)
+
+Each endpoint accepts a single file upload and returns JSON with extracted fields + debug info.
+
+---
+
+## Troubleshooting
+
+### Error: `ModuleNotFoundError: No module named 'transformers'`
+```bash
+pip install -r requirements.txt
+```
+
+### Error: `ModuleNotFoundError: No module named 'torch'`
+- On Windows with GPU: Install CUDA 11.8+ first, then:
+  ```bash
+  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+  ```
+- Without GPU (CPU):
+  ```bash
+  pip install torch torchvision torchaudio
+  ```
+
+### Method 2 (LLM) returns error "LLM API call failed"
+- Ensure `GEMINI_API_KEY` environment variable is set
+- Check that your API key is valid at https://makersuite.google.com/app/apikey
+
+### Method 3 (LayoutLM) returns error "Model not available"
+- Ensure the notebook completed training: `../output/model/` should exist and contain:
+  - `config.json`
+  - `pytorch_model.bin`
+  - `special_tokens_map.json`
+  - `tokenizer_config.json`
+  - `vocab.txt`
+
+### Slow first inference with EasyOCR / LayoutLM
+- First run downloads/loads models — this is normal
+- Subsequent runs will be faster
+- On first run, the download may take 2–5 minutes
+
+---
+
+## Performance Notes
+
+| Method | Speed | Accuracy | GPU Needed | Dependencies |
+|--------|-------|----------|-----------|--------------|
+| Rule-based | Fast (< 1s) | Medium | No | EasyOCR, regex |
+| LLM | Slow (3–10s) | High | No | EasyOCR, Gemini API |
+| LayoutLM | Slow (3–8s) | Very High | Optional | EasyOCR, PyTorch, Transformers |
+
+---
+
+## License & Attribution
+
+- **LayoutLM**: [Microsoft UNILM](https://github.com/microsoft/unilm)
+- **EasyOCR**: [JaidedAI EasyOCR](https://github.com/JaidedAI/EasyOCR)
+- **SROIE Dataset**: [ICDAR 2019](https://rrc.cvc.uab.es/?ch=13)
